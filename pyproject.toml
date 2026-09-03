@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langchain-fathom"
+version = "0.1.0"
+description = "A LangChain agent middleware that reads an agent's committed state and reports where a later step contradicts an earlier one."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Embedded Risk Analytics" }]
+keywords = ["langchain", "agents", "coherence", "agent-evaluation", "observability"]
+dependencies = ["fathom-read>=0.1.1", "langchain>=1.0"]
+
+[project.urls]
+Homepage = "https://github.com/ERA-Fathom/fathom"
+Source = "https://github.com/ERA-Fathom/langchain-fathom"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
