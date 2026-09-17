@@ -14,9 +14,13 @@ contradicts a decision it already made, without touching the agent's runtime pat
 
 By default the middleware logs any findings. Pass on_finding="raise" to fail a run that is not
 coherent, which drops it into a test suite, or on_finding="store" to put the verdict on the
-agent state under the "fathom" key. The read is diagnosis. The repair, which re-grounds the
-agent before the contradiction ships, runs as part of the Fathom service and is not in this
-package.
+agent state under the "fathom" key, which the middleware declares so the graph keeps it. The read
+is diagnosis. The repair, which re-grounds the agent before the contradiction ships, runs as part
+of the Fathom service and is not in this package.
+
+The middleware reads the calls of the agent it rides. An orchestrator that delegates to sub-agents
+runs each of them as its own agent, so give every sub-agent its own FathomMiddleware to see the
+whole run.
 """
 from __future__ import annotations
 
@@ -27,6 +31,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from fathom_read.client import read, ReadError
 
 from .messages import ops_from_messages
+from .state import FathomState
 
 try:
     from langchain.agents.middleware import AgentMiddleware
@@ -36,6 +41,8 @@ except ImportError as e:  # pragma: no cover
     ) from e
 
 log = logging.getLogger("fathom")
+
+STATE_KEY = "fathom"
 
 
 class FathomCoherenceError(AssertionError):
@@ -48,13 +55,16 @@ class FathomMiddleware(AgentMiddleware):
     Args:
         on_finding: "log" reports findings through the "fathom" logger (the default); "raise"
             raises FathomCoherenceError when the run is not coherent; "store" writes the verdict
-            onto the agent state under the "fathom" key.
+            onto the agent state under the "fathom" key, which this middleware declares so the
+            graph keeps it.
         supersede: optional (old, new) token pairs the run is expected to migrate, such as a
             field rename, so the read also reports records left on the old value at the end.
         mapping_path: optional path to a JSON tool map for tool names outside the defaults.
         key, endpoint: optional overrides for the Fathom read; the packaged demo key is used
             otherwise, and FATHOM_API_KEY / FATHOM_ENDPOINT are honored.
     """
+
+    state_schema = FathomState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -91,7 +101,7 @@ class FathomMiddleware(AgentMiddleware):
             return None
         if verdict["coherent"]:
             log.info("fathom: committed state coherent across %d ops", verdict["ops_read"])
-            return {"fathom": verdict} if self.on_finding == "store" else None
+            return {STATE_KEY: verdict} if self.on_finding == "store" else None
         lines = [
             f"step {f['step']} {f['kind']}: {f['detail']}" if f["step"] is not None else f"{f['kind']}: {f['detail']}"
             for f in verdict["findings"]
@@ -100,6 +110,6 @@ class FathomMiddleware(AgentMiddleware):
         if self.on_finding == "raise":
             raise FathomCoherenceError(message)
         if self.on_finding == "store":
-            return {"fathom": verdict}
+            return {STATE_KEY: verdict}
         log.warning(message)
         return None

@@ -34,6 +34,16 @@ FathomMiddleware(on_finding="raise")   # raise FathomCoherenceError when a run i
 FathomMiddleware(on_finding="store")   # put the verdict on agent state under the "fathom" key
 ```
 
+Under `store`, the verdict arrives on the result.
+
+```python
+result = agent.invoke({"messages": [...]})
+verdict = result["fathom"]
+verdict["coherent"], verdict["findings"]
+```
+
+The middleware declares that key in its own state schema, so a graph that carries a state schema of its own keeps the verdict rather than dropping it. Version 0.1.0 declared nothing, and an orchestrator such as a deepagents agent dropped the verdict before the caller saw it.
+
 If the run is a rename or a migration, tell the read which token replaced which, so it also reports records left on the old value at the end.
 
 ```python
@@ -52,6 +62,10 @@ FathomMiddleware(supersede=[("guest_id", "customer_id")])
 
 A coherent run returns `coherent` and the middleware reports nothing else.
 
+## Agents that delegate
+
+The middleware reads the calls of the agent it rides. An orchestrator that hands work to sub-agents runs each sub-agent as its own agent with its own message history, so an orchestrator-level middleware sees the delegation and the orchestrator's own tools, and not what the sub-agents did. Give each sub-agent its own `FathomMiddleware` to cover the whole run. On one deepagents research run we measured, the orchestrator's middleware alone returned 3 of the 9 findings a trace across every sub-agent returned.
+
 ## Your own tool names
 
 The read knows common state-writing tool names. For tools with your own names, map them once and pass the file.
@@ -67,7 +81,7 @@ FathomMiddleware(mapping_path="tools.json")
 
 ## The read and the repair
 
-The middleware is the read. It tells you where coherence broke. Embedded Risk Analytics also runs a hosted service that acts on what the read finds and re-grounds the agent before the contradiction ships. Write to contact@embeddedriskanalytics.com for a key that lifts the demo rate limit, or to run the read on a workflow of your own.
+The middleware is the read. It tells you where coherence broke. Embedded Risk Analytics also runs a hosted service that acts on what the read finds and re-grounds the agent before the contradiction ships. Both run free with a key from `fathom key` in the [fathom-read](https://github.com/ERA-Fathom/fathom) package, or write to contact@embeddedriskanalytics.com to run the read on a workflow of your own.
 
 ## Links
 

@@ -1,6 +1,6 @@
 """Middleware behavior with a stand-in AgentMiddleware base and a stubbed read."""
 import langchain_fathom.middleware as mw
-from langchain_fathom import FathomMiddleware, FathomCoherenceError
+from langchain_fathom import FathomMiddleware, FathomCoherenceError, FathomState, STATE_KEY
 
 
 class AI:
@@ -29,10 +29,16 @@ def test_store_on_finding(monkeypatch):
     m = FathomMiddleware(on_finding="store")
     state = {"messages": [AI([{"name": "set_value", "args": {"key": "a", "value": "1"}, "id": "x"}])]}
     out = m.after_agent(state)
-    assert out["fathom"]["coherent"] is True
+    assert out[STATE_KEY]["coherent"] is True
 
 
 def test_no_tool_calls_returns_none(monkeypatch):
     monkeypatch.setattr(mw, "read", lambda *a, **k: _verdict(True, []))
     m = FathomMiddleware()
     assert m.after_agent({"messages": []}) is None
+
+
+def test_state_key_is_declared():
+    """The graph keeps the verdict only when the middleware's schema names the key (0.1.1)."""
+    assert FathomMiddleware.state_schema is FathomState
+    assert STATE_KEY in FathomState.__annotations__
