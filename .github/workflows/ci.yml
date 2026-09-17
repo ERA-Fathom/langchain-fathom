@@ -13,3 +13,4 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[test]" langchain
       - run: python -m pytest -q
+      - run: bash scripts_boundary_check.sh
