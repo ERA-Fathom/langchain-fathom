@@ -79,9 +79,48 @@ FathomMiddleware(mapping_path="tools.json")
  "confirm_booking": {"op": "commit", "kind": "flight", "key": "booking"}}
 ```
 
-## The read and the repair
+## The repair
 
-The middleware is the read. It tells you where coherence broke. Embedded Risk Analytics also runs a hosted service that acts on what the read finds and re-grounds the agent before the contradiction ships. Both run free with a key from `fathom key` in the [fathom-read](https://github.com/ERA-Fathom/fathom) package, or write to contact@embeddedriskanalytics.com to run the read on a workflow of your own.
+`FathomMiddleware` watches. `FathomRepairMiddleware` acts. It sits between the model and its tools, sends the actions the model just proposed together with what the run has already committed, and gets back one of three decisions.
+
+```python
+from langchain_fathom import FathomRepairMiddleware
+
+agent = create_agent(
+    model="gpt-5.5",
+    tools=[...],
+    middleware=[FathomRepairMiddleware()],
+)
+```
+
+On `proceed` every proposed action is consistent with what the agent already committed and nothing changes. On `filter` the agent keeps its own consistent alternatives and the contradicting calls never reach the tools. On `reground` none of them survive, so the committed facts go back in front of the model as a system-role message and the model is asked again, once by default.
+
+The repair needs a free key. Get one with `fathom key you@example.com` from the [fathom-read](https://github.com/ERA-Fathom/fathom) package and set `FATHOM_API_KEY`, or pass `key=`. The middleware checks for it when you construct it, so a run fails at setup rather than twenty steps in. The two reads stay free without a key.
+
+This middleware changes what your agent does, which is why it carries its own class rather than a flag on the read. Two settings cover the cases where that matters.
+
+```python
+FathomRepairMiddleware(on_error="raise")  # stop the run rather than skip the repair
+FathomRepairMiddleware(max_reasks=0)      # never re-ask; filter and proceed only
+```
+
+`on_error` defaults to `"proceed"`, so an unreachable service or a spent daily limit logs a warning and lets the agent act on its own proposal. A coherence repair should not take down a running agent. Pass `"raise"` when you are measuring a before-and-after, since a silently skipped repair would contaminate the result.
+
+Every repaired step appends an entry to agent state under `fathom_repair`, carrying the decision, the proposals evaluated, the finding kinds of anything dropped, and the re-asks spent. That is the log a run needs to report what the repair did.
+
+```python
+result = agent.invoke({"messages": [...]})
+for step in result["fathom_repair"]:
+    print(step["decision"], step["dropped"])
+```
+
+What it costs, in two places. A repair call counts double against the 2,000 calls a day a free key carries. A `reground` decision spends one extra model call, billed by your own provider. A model turn with no tool calls, and a tool the mapping does not name, cost nothing and pass through untouched.
+
+## What we measured
+
+On DBOS's own Hacker News research agent, vendored unchanged and run on gpt-4o-mini through OpenRouter across five topics at ten iterations each, the agent as published repeated 14 of 50 searches and re-read 42 percent of the threads it fetched. With the repair in front of the one step where it proposes its next queries, repeats fell to 0 of 50, re-reads to 12 percent, and distinct threads covered rose 35 percent at the same model and the same iteration count. Across 45 follow-up steps the repair let 23 through untouched, filtered 21, and regrounded 1. Every run, the trace, and the command sit in the [coherence census](https://github.com/ERA-Fathom/coherence-census/tree/main/rows/dbos-hn-agent).
+
+Those numbers come from an agent that hands out its proposed next queries explicitly. Your mileage depends on how much of your agent's state the tool mapping can see.
 
 ## Links
 
