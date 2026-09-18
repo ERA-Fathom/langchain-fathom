@@ -64,7 +64,7 @@ A coherent run returns `coherent` and the middleware reports nothing else.
 
 ## Agents that delegate
 
-The middleware reads the calls of the agent it rides. An orchestrator that hands work to sub-agents runs each sub-agent as its own agent with its own message history, so an orchestrator-level middleware sees the delegation and the orchestrator's own tools, and not what the sub-agents did. Give each sub-agent its own `FathomMiddleware` to cover the whole run. On one deepagents research run we measured, the orchestrator's middleware alone returned 3 of the 9 findings a trace across every sub-agent returned.
+The middleware reads the calls of the agent it rides. An orchestrator that hands work to sub-agents runs each sub-agent as its own agent with its own message history, so an orchestrator-level middleware sees the delegation and the orchestrator's own tools, and not what the sub-agents did. Give each sub-agent its own `FathomMiddleware` to cover the whole run. Or attach one `FathomCapture` at the graph root, which follows the orchestrator into its sub-agents and returns the whole run in a single trace, the same trace the fathom-read `deepagents` adapter reads. On one deepagents research run we measured, the orchestrator's middleware alone returned 3 of the 9 findings a trace across every sub-agent returned.
 
 ## Your own tool names
 

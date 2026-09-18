@@ -4,8 +4,9 @@ from .messages import ops_from_messages
 from .repair import FathomRepairMiddleware, FathomKeyError, FathomRepairError
 from .repair import STATE_KEY as REPAIR_STATE_KEY
 from .state import FathomState, FathomRepairState
+from .capture import FathomCapture
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = [
     "FathomMiddleware",
     "FathomCoherenceError",
@@ -14,6 +15,7 @@ __all__ = [
     "FathomRepairError",
     "FathomState",
     "FathomRepairState",
+    "FathomCapture",
     "STATE_KEY",
     "REPAIR_STATE_KEY",
     "ops_from_messages",

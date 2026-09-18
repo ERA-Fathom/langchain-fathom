@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 (2026-09-18)
+
+- `FathomCapture` records every tool call an agent and its sub-agents make from one attachment at the graph root, attributing each to the `task()` delegation it ran under by run_id ancestry. It closes the gap `FathomMiddleware` leaves on a delegating orchestrator, where the orchestrator's middleware alone returned 3 of the 9 findings a trace across every sub-agent returned. `cap.trace(result["messages"])` returns the canonical trace the fathom-read `deepagents` adapter reads, and merges the orchestrator tool calls the callback does not see, such as `write_todos`, from the message history.
+- A pluggable result extractor keeps the search sources a tool returned, tavily by default.
+- The handler imports langchain lazily, so importing `FathomCapture` needs no langchain until it attaches to a run.
+- Requires fathom-read 0.6.0 or later, which carries the `deepagents` adapter.
+
 ## 0.2.0 (2026-09-17)
 
 - `FathomRepairMiddleware` runs the Fathom repair on the actions the model proposes, before the tools run. It answers `proceed`, keeps the agent's own non-contradicting alternatives on `filter`, and on `reground` puts the committed facts back in front of the model and asks again. Unlike `FathomMiddleware`, it changes what the agent does, so it ships as its own class rather than as another `on_finding` value.
