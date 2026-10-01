@@ -129,3 +129,8 @@ Those numbers come from an agent that hands out its proposed next queries explic
 - [Research](https://embeddedriskanalytics.com/research.html) and the paper, [SSRN 6683578](https://doi.org/10.2139/ssrn.6683578)
 
 MIT licensed.
+
+
+---
+
+If the read caught something in your own run, a star on this repository helps other teams find it.
