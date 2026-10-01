@@ -2,8 +2,8 @@
 The agent state keys the middleware writes to.
 
 LangGraph builds an agent's state schema from the schemas the agent and its middleware declare,
-and it drops any key no schema names. `FathomMiddleware(on_finding="store")` writes the verdict
-under "fathom", and `FathomRepairMiddleware` appends one entry per repaired step under
+and it drops any key no schema names. `RightRudderMiddleware(on_finding="store")` writes the verdict
+under "fathom", and `RightRudderRepairMiddleware` appends one entry per repaired step under
 "fathom_repair", so both keys have to be declared to survive the graph and reach the caller. A
 graph that declares its own state, such as a deepagents orchestrator, dropped the verdict before
 0.1.1 for exactly that reason.
@@ -50,27 +50,27 @@ else:  # pragma: no cover - older langchain
 
 if _AgentState is not None:
 
-    class FathomState(_AgentState):  # type: ignore[misc,valid-type]
+    class RightRudderState(_AgentState):  # type: ignore[misc,valid-type]
         """Agent state plus the key the read's verdict lands on."""
 
         fathom: VerdictField  # type: ignore[valid-type]
 
-    class FathomRepairState(_AgentState):  # type: ignore[misc,valid-type]
+    class RightRudderRepairState(_AgentState):  # type: ignore[misc,valid-type]
         """Agent state plus the log the repair appends to, one entry per repaired step."""
 
         fathom_repair: RepairField  # type: ignore[valid-type]
 
 else:  # pragma: no cover - langchain absent, offline tests only
 
-    class FathomState(TypedDict):  # type: ignore[no-redef]
+    class RightRudderState(TypedDict):  # type: ignore[no-redef]
         """The verdict key alone, for an environment without langchain installed."""
 
         fathom: VerdictField  # type: ignore[valid-type]
 
-    class FathomRepairState(TypedDict):  # type: ignore[no-redef]
+    class RightRudderRepairState(TypedDict):  # type: ignore[no-redef]
         """The repair log key alone, for an environment without langchain installed."""
 
         fathom_repair: RepairField  # type: ignore[valid-type]
 
 
-__all__ = ["FathomState", "FathomRepairState"]
+__all__ = ["RightRudderState", "RightRudderRepairState"]

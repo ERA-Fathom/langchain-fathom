@@ -1,11 +1,11 @@
 """The repair middleware, against a stubbed service and a stub model call."""
 import pytest
 
-import langchain_fathom.repair as R
-from langchain_fathom import FathomRepairMiddleware, FathomKeyError, FathomRepairError, REPAIR_STATE_KEY
+import langchain_right_rudder.repair as R
+from langchain_right_rudder import RightRudderRepairMiddleware, RightRudderKeyError, RightRudderRepairError, REPAIR_STATE_KEY
 
-from fathom_read.client import ReadError
-from fathom_read.ops import RegroundVerdict
+from right_rudder.client import ReadError
+from right_rudder.ops import RegroundVerdict
 
 
 class AI:
@@ -47,30 +47,30 @@ def verdict(decision, kept=(), dropped=(), facts=(), proposals=0):
 
 @pytest.fixture
 def mw(monkeypatch):
-    monkeypatch.setenv("FATHOM_API_KEY", "k-test")
-    return FathomRepairMiddleware(record=False)
+    monkeypatch.setenv("RIGHT_RUDDER_API_KEY", "k-test")
+    return RightRudderRepairMiddleware(record=False)
 
 
 # -- the key ---------------------------------------------------------------------------
 
 def test_key_is_required_at_construction(monkeypatch):
-    monkeypatch.delenv("FATHOM_API_KEY", raising=False)
-    with pytest.raises(FathomKeyError) as e:
-        FathomRepairMiddleware()
-    assert "fathom key" in str(e.value)
+    monkeypatch.delenv("RIGHT_RUDDER_API_KEY", raising=False)
+    with pytest.raises(RightRudderKeyError) as e:
+        RightRudderRepairMiddleware()
+    assert "right-rudder key" in str(e.value)
 
 
 def test_key_argument_beats_the_environment(monkeypatch):
-    monkeypatch.setenv("FATHOM_API_KEY", "from-env")
-    assert FathomRepairMiddleware(key="explicit").key == "explicit"
+    monkeypatch.setenv("RIGHT_RUDDER_API_KEY", "from-env")
+    assert RightRudderRepairMiddleware(key="explicit").key == "explicit"
 
 
 def test_bad_arguments_are_refused(monkeypatch):
-    monkeypatch.setenv("FATHOM_API_KEY", "k")
+    monkeypatch.setenv("RIGHT_RUDDER_API_KEY", "k")
     with pytest.raises(ValueError):
-        FathomRepairMiddleware(on_error="explode")
+        RightRudderRepairMiddleware(on_error="explode")
     with pytest.raises(ValueError):
-        FathomRepairMiddleware(max_reasks=-1)
+        RightRudderRepairMiddleware(max_reasks=-1)
 
 
 # -- the three decisions ---------------------------------------------------------------
@@ -117,8 +117,8 @@ def test_reground_reasks_once_then_proceeds(mw, monkeypatch):
 
 
 def test_max_reasks_zero_never_reasks(monkeypatch):
-    monkeypatch.setenv("FATHOM_API_KEY", "k")
-    m = FathomRepairMiddleware(max_reasks=0, record=False)
+    monkeypatch.setenv("RIGHT_RUDDER_API_KEY", "k")
+    m = RightRudderRepairMiddleware(max_reasks=0, record=False)
     monkeypatch.setattr(R, "reground", lambda *a, **k: verdict("reground", proposals=1))
     seen = []
 
@@ -178,22 +178,22 @@ def test_unreachable_repair_lets_the_agent_proceed(mw, monkeypatch):
 
 
 def test_on_error_raise_stops_the_run(monkeypatch):
-    monkeypatch.setenv("FATHOM_API_KEY", "k")
-    m = FathomRepairMiddleware(on_error="raise", record=False)
+    monkeypatch.setenv("RIGHT_RUDDER_API_KEY", "k")
+    m = RightRudderRepairMiddleware(on_error="raise", record=False)
 
     def down(*a, **k):
         raise ReadError("the daily limit for this key is reached")
 
     monkeypatch.setattr(R, "reground", down)
-    with pytest.raises(FathomRepairError):
+    with pytest.raises(RightRudderRepairError):
         m.wrap_model_call(Request([]), lambda req: Response([AI([call("set_value", "a", "1", "c1")])]))
 
 
 # -- the log ----------------------------------------------------------------------------
 
 def test_the_decision_is_recorded(monkeypatch):
-    monkeypatch.setenv("FATHOM_API_KEY", "k")
-    m = FathomRepairMiddleware()
+    monkeypatch.setenv("RIGHT_RUDDER_API_KEY", "k")
+    m = RightRudderRepairMiddleware()
     monkeypatch.setattr(R, "reground", lambda *a, **k: verdict("proceed", proposals=1))
     out = m.wrap_model_call(Request([]), lambda req: Response([AI([call("set_value", "a", "1", "c1")])]))
     command = getattr(out, "command", None)

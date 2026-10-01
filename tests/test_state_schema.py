@@ -16,8 +16,8 @@ from langchain_core.tools import tool
 from langchain.agents import create_agent
 from langchain.agents.middleware import AgentMiddleware
 
-import langchain_fathom.middleware as mw
-from langchain_fathom import FathomMiddleware, STATE_KEY
+import langchain_right_rudder.middleware as mw
+from langchain_right_rudder import RightRudderMiddleware, STATE_KEY
 
 
 @tool
@@ -51,7 +51,7 @@ def _model():
 
 
 def _stub_read(monkeypatch):
-    from fathom_read.ops import Verdict
+    from right_rudder.ops import Verdict
 
     verdict = Verdict.from_dict(
         {"coherent": True, "findings": [], "ops_read": 1, "ops_rejected": 0, "live_facts": 1}
@@ -62,7 +62,7 @@ def _stub_read(monkeypatch):
 def test_verdict_survives_the_graph(monkeypatch):
     _stub_read(monkeypatch)
     agent = create_agent(model=_model(), tools=[set_value],
-                         middleware=[FathomMiddleware(on_finding="store")])
+                         middleware=[RightRudderMiddleware(on_finding="store")])
     result = agent.invoke({"messages": [{"role": "user", "content": "set the city"}]})
     assert STATE_KEY in result, "the graph dropped the verdict; the state key is not declared"
     assert result[STATE_KEY]["coherent"] is True
@@ -73,7 +73,7 @@ def test_undeclared_key_is_dropped(monkeypatch):
     """Control: the same verdict, written by a middleware that declares no schema, does not arrive."""
     _stub_read(monkeypatch)
 
-    class Undeclared(FathomMiddleware):
+    class Undeclared(RightRudderMiddleware):
         state_schema = AgentMiddleware.state_schema
 
     agent = create_agent(model=_model(), tools=[set_value],

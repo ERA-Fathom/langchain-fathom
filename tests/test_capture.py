@@ -1,11 +1,11 @@
 """Tests for the single-attachment capture. Synthetic callback events, no agent and no model."""
 
-from langchain_fathom.capture import FathomCapture
+from langchain_right_rudder.capture import RightRudderCapture
 
 
 def build():
     """An orchestrator delegating two sub-agents. Sub-agent two repeats sub-agent one's query."""
-    cap = FathomCapture()
+    cap = RightRudderCapture()
     cap.note_chain("orch", None)
     cap.start_tool("task", "t1", "orch", inputs={"description": "research a"})
     cap.end_tool("t1", "delegated")
@@ -38,7 +38,7 @@ def test_full_capture_sees_more_than_orchestrator_only():
 
 
 def test_tavily_results_extracted():
-    cap = FathomCapture()
+    cap = RightRudderCapture()
     cap.start_tool("tavily_search", "s", None, inputs={"query": "x"})
     cap.end_tool("s", "## Title\n**URL:** https://example.com/p")
     assert cap.calls[0]["results"] == [["https://example.com/p", "Title"]]
@@ -52,7 +52,7 @@ class _Msg:
 
 
 def test_merge_and_final_message():
-    cap = FathomCapture()
+    cap = RightRudderCapture()
     cap.note_chain("orch", None)
     cap.start_tool("tavily_search", "os", "orch", inputs={"query": "x"})
     cap.end_tool("os", "none")

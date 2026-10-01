@@ -1,25 +1,25 @@
 """
-FathomMiddleware: read an agent's committed state after it runs and report where it broke.
+RightRudderMiddleware: read an agent's committed state after it runs and report where it broke.
 
 The middleware observes the agent and does not change what it does. When the agent finishes,
 it maps the tool calls in the message history to a committed-state op stream, sends that stream
-to the Fathom read, and reports the findings. Use it to catch the step where a long agent
+to the Right Rudder read, and reports the findings. Use it to catch the step where a long agent
 contradicts a decision it already made, without touching the agent's runtime path.
 
     from langchain.agents import create_agent
-    from langchain_fathom import FathomMiddleware
+    from langchain_right_rudder import RightRudderMiddleware
 
-    agent = create_agent(model="gpt-5.5", tools=[...], middleware=[FathomMiddleware()])
+    agent = create_agent(model="gpt-5.5", tools=[...], middleware=[RightRudderMiddleware()])
     result = agent.invoke({"messages": [...]})
 
 By default the middleware logs any findings. Pass on_finding="raise" to fail a run that is not
 coherent, which drops it into a test suite, or on_finding="store" to put the verdict on the
 agent state under the "fathom" key, which the middleware declares so the graph keeps it. The read
 is diagnosis. The repair, which re-grounds the agent before the contradiction ships, runs as part
-of the Fathom service and is not in this package.
+of the Right Rudder service and is not in this package.
 
 The middleware reads the calls of the agent it rides. An orchestrator that delegates to sub-agents
-runs each of them as its own agent, so give every sub-agent its own FathomMiddleware to see the
+runs each of them as its own agent, so give every sub-agent its own RightRudderMiddleware to see the
 whole run.
 """
 from __future__ import annotations
@@ -28,16 +28,16 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from fathom_read.client import read, ReadError
+from right_rudder.client import read, ReadError
 
 from .messages import ops_from_messages
-from .state import FathomState
+from .state import RightRudderState
 
 try:
     from langchain.agents.middleware import AgentMiddleware
 except ImportError as e:  # pragma: no cover
     raise ImportError(
-        "langchain-fathom needs langchain>=1.0 with agent middleware: pip install 'langchain>=1.0'"
+        "langchain-right-rudder needs langchain>=1.0 with agent middleware: pip install 'langchain>=1.0'"
     ) from e
 
 log = logging.getLogger("fathom")
@@ -45,26 +45,26 @@ log = logging.getLogger("fathom")
 STATE_KEY = "fathom"
 
 
-class FathomCoherenceError(AssertionError):
-    """Raised by FathomMiddleware(on_finding='raise') when the committed state is not coherent."""
+class RightRudderCoherenceError(AssertionError):
+    """Raised by RightRudderMiddleware(on_finding='raise') when the committed state is not coherent."""
 
 
-class FathomMiddleware(AgentMiddleware):
+class RightRudderMiddleware(AgentMiddleware):
     """Reads the agent's committed state after each run and reports contradictions.
 
     Args:
         on_finding: "log" reports findings through the "fathom" logger (the default); "raise"
-            raises FathomCoherenceError when the run is not coherent; "store" writes the verdict
+            raises RightRudderCoherenceError when the run is not coherent; "store" writes the verdict
             onto the agent state under the "fathom" key, which this middleware declares so the
             graph keeps it.
         supersede: optional (old, new) token pairs the run is expected to migrate, such as a
             field rename, so the read also reports records left on the old value at the end.
         mapping_path: optional path to a JSON tool map for tool names outside the defaults.
-        key, endpoint: optional overrides for the Fathom read; the packaged demo key is used
-            otherwise, and FATHOM_API_KEY / FATHOM_ENDPOINT are honored.
+        key, endpoint: optional overrides for the Right Rudder read; the packaged demo key is used
+            otherwise, and RIGHT_RUDDER_API_KEY / RIGHT_RUDDER_ENDPOINT are honored.
     """
 
-    state_schema = FathomState  # type: ignore[assignment]
+    state_schema = RightRudderState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -80,8 +80,8 @@ class FathomMiddleware(AgentMiddleware):
         self.on_finding = on_finding
         self.supersede = supersede
         self.mapping_path = mapping_path
-        self.key = key or os.environ.get("FATHOM_API_KEY")
-        self.endpoint = endpoint or os.environ.get("FATHOM_ENDPOINT")
+        self.key = key or (os.environ.get("RIGHT_RUDDER_API_KEY") or os.environ.get("FATHOM_API_KEY"))
+        self.endpoint = endpoint or (os.environ.get("RIGHT_RUDDER_ENDPOINT") or os.environ.get("FATHOM_ENDPOINT"))
 
     def _run_read(self, messages: List[Any]) -> Optional[Dict[str, Any]]:
         ops = ops_from_messages(messages, self.mapping_path)
@@ -90,7 +90,7 @@ class FathomMiddleware(AgentMiddleware):
         try:
             verdict = read(ops, supersede=self.supersede, key=self.key, endpoint=self.endpoint)
         except ReadError as e:
-            log.warning("fathom: could not reach the read (%s); skipping", e)
+            log.warning("right-rudder: could not reach the read (%s); skipping", e)
             return None
         return verdict.as_dict()
 
@@ -100,15 +100,15 @@ class FathomMiddleware(AgentMiddleware):
         if verdict is None:
             return None
         if verdict["coherent"]:
-            log.info("fathom: committed state coherent across %d ops", verdict["ops_read"])
+            log.info("right-rudder: committed state coherent across %d ops", verdict["ops_read"])
             return {STATE_KEY: verdict} if self.on_finding == "store" else None
         lines = [
             f"step {f['step']} {f['kind']}: {f['detail']}" if f["step"] is not None else f"{f['kind']}: {f['detail']}"
             for f in verdict["findings"]
         ]
-        message = "fathom: %d coherence finding(s)\n  %s" % (len(verdict["findings"]), "\n  ".join(lines))
+        message = "right-rudder: %d coherence finding(s)\n  %s" % (len(verdict["findings"]), "\n  ".join(lines))
         if self.on_finding == "raise":
-            raise FathomCoherenceError(message)
+            raise RightRudderCoherenceError(message)
         if self.on_finding == "store":
             return {STATE_KEY: verdict}
         log.warning(message)

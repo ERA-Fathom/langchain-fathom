@@ -3,7 +3,7 @@ Turn a LangChain message list into a committed-state op stream.
 
 The middleware watches the messages an agent produces. Every tool the agent calls is an
 action on committed state, so this module maps each tool call in the message history to an op
-through the same tool mapping the fathom-read adapters use, and marks an op as a no-op when the
+through the same tool mapping the right-rudder adapters use, and marks an op as a no-op when the
 matching tool result reports an error. It is pure and holds no LangChain import, so it can be
 tested on plain objects.
 """
@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from fathom_read.adapters._tools import op_from_tool, load_map
-from fathom_read.ops import Op
+from right_rudder.adapters._tools import op_from_tool, load_map
+from right_rudder.ops import Op
 
 
 def _tool_calls(message: Any) -> List[Dict[str, Any]]:

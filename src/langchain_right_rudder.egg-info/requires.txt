@@ -1,0 +1,6 @@
+right-rudder>=0.7.0
+langchain>=1.0
+typing-extensions>=4.7
+
+[test]
+pytest

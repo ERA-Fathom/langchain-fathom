@@ -1,3 +1,22 @@
+Metadata-Version: 2.4
+Name: langchain-right-rudder
+Version: 0.4.0
+Summary: LangChain agent middleware that reads an agent's committed state, and repairs the step where a later action would contradict an earlier one.
+Author: Embedded Risk Analytics
+License: MIT
+Project-URL: Homepage, https://github.com/RightRudderAI/right-rudder
+Project-URL: Source, https://github.com/RightRudderAI/langchain-right-rudder
+Keywords: langchain,agents,coherence,agent-evaluation,observability
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: right-rudder>=0.7.0
+Requires-Dist: langchain>=1.0
+Requires-Dist: typing-extensions>=4.7
+Provides-Extra: test
+Requires-Dist: pytest; extra == "test"
+Dynamic: license-file
+
 # langchain-right-rudder
 
 **A coherence read for LangChain agents, as an agent middleware.**

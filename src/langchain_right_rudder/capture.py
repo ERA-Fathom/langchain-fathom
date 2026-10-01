@@ -1,19 +1,19 @@
-"""fathom_capture.py
+"""right_rudder_capture.py
 
 A single-attachment capture for LangChain and LangGraph agents. Attach one
-FathomCapture at the graph root and it records every tool call the orchestrator
+RightRudderCapture at the graph root and it records every tool call the orchestrator
 and its sub-agents make, attributing each to the task() delegation it ran under
 by run_id ancestry. This is what closes the gap the per-agent middleware leaves,
 where an orchestrator that delegates shows only its own calls unless a partner
 wires a middleware into every sub-agent by hand.
 
 Usage.
-    from fathom_capture import FathomCapture
-    cap = FathomCapture()
+    from right_rudder_capture import RightRudderCapture
+    cap = RightRudderCapture()
     result = agent.invoke({"messages": [HumanMessage(content=q)]},
                           config={"callbacks": [cap.handler]})
     trace = cap.trace(result.get("messages"))     # {"calls": [...], "final_message": "..."}
-    verdict = fathom_read.read(fathom_read.load_ops_from(trace, "deepagents"))
+    verdict = right_rudder.read(right_rudder.load_ops_from(trace, "deepagents"))
 
 The recording logic is the ToolTrace the deepagents runs already used, the one
 that recovered all nine findings on the 9/16 llama run against three from the
@@ -63,7 +63,7 @@ DEFAULT_EXTRACTORS: Dict[str, Callable[[str], List[list]]] = {"tavily_search": t
 # the capture
 # ---------------------------------------------------------------------------
 
-class FathomCapture:
+class RightRudderCapture:
     """Records every tool call in a LangChain/LangGraph run with its ancestry, and
     emits the canonical trace the deepagents adapter reads."""
 

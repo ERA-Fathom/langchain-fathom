@@ -1,26 +1,26 @@
 """
-FathomRepairMiddleware: run the repair in front of the agent's next step.
+RightRudderRepairMiddleware: run the repair in front of the agent's next step.
 
 The read tells you where an agent contradicted itself. The repair acts on what the read finds,
 before the contradiction ships. This middleware sits between the model and its tools. When the
 model proposes its next actions, the middleware sends those actions and the run's committed state
-so far to the Fathom repair, and the repair answers with one of three decisions.
+so far to the Right Rudder repair, and the repair answers with one of three decisions.
 
     proceed   every proposed action is consistent with what the agent already committed
     filter    some are; the agent keeps its own consistent alternatives and drops the rest
     reground  none are; the committed facts go back in front of the model and it is asked again
 
-Unlike FathomMiddleware, which only watches, this one changes what the agent does. It drops tool
+Unlike RightRudderMiddleware, which only watches, this one changes what the agent does. It drops tool
 calls the agent's own committed state contradicts, and it can spend one extra model call to ask
 again. Turn it on deliberately.
 
     from langchain.agents import create_agent
-    from langchain_fathom import FathomRepairMiddleware
+    from langchain_right_rudder import RightRudderRepairMiddleware
 
-    agent = create_agent(model="gpt-5.5", tools=[...], middleware=[FathomRepairMiddleware()])
+    agent = create_agent(model="gpt-5.5", tools=[...], middleware=[RightRudderRepairMiddleware()])
 
-The repair needs a free key. Run `fathom key you@example.com` from the fathom-read package and
-set FATHOM_API_KEY, or pass key= here. The middleware checks for it when you construct it, so a
+The repair needs a free key. Run `right-rudder key you@example.com` from the right-rudder package and
+set RIGHT_RUDDER_API_KEY, or pass key= here. The middleware checks for it when you construct it, so a
 run fails at setup rather than partway through.
 
 Cost, in two places. A repair call counts double against the 2,000 calls a day a free key carries.
@@ -32,17 +32,17 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from fathom_read.adapters._tools import load_map, op_from_tool
-from fathom_read.client import ReadError, reground
+from right_rudder.adapters._tools import load_map, op_from_tool
+from right_rudder.client import ReadError, reground
 
 from .messages import ops_from_messages
-from .state import FathomRepairState
+from .state import RightRudderRepairState
 
 try:
     from langchain.agents.middleware import AgentMiddleware
 except ImportError as e:  # pragma: no cover
     raise ImportError(
-        "langchain-fathom needs langchain>=1.0 with agent middleware: pip install 'langchain>=1.0'"
+        "langchain-right-rudder needs langchain>=1.0 with agent middleware: pip install 'langchain>=1.0'"
     ) from e
 
 log = logging.getLogger("fathom")
@@ -66,12 +66,12 @@ except Exception:
     pass
 
 
-class FathomKeyError(RuntimeError):
-    """Raised when FathomRepairMiddleware is built without a key for the repair."""
+class RightRudderKeyError(RuntimeError):
+    """Raised when RightRudderRepairMiddleware is built without a key for the repair."""
 
 
-class FathomRepairError(RuntimeError):
-    """Raised by FathomRepairMiddleware(on_error='raise') when the repair cannot be reached."""
+class RightRudderRepairError(RuntimeError):
+    """Raised by RightRudderRepairMiddleware(on_error='raise') when the repair cannot be reached."""
 
 
 def _last_ai_index(messages: Sequence[Any]) -> int:
@@ -93,11 +93,11 @@ def _tool_calls_of(message: Any) -> List[Dict[str, Any]]:
     return out
 
 
-class FathomRepairMiddleware(AgentMiddleware):
-    """Runs the Fathom repair on the actions the model proposes, before the tools run.
+class RightRudderRepairMiddleware(AgentMiddleware):
+    """Runs the Right Rudder repair on the actions the model proposes, before the tools run.
 
     Args:
-        key: the service key. Falls back to FATHOM_API_KEY. Required, and checked here.
+        key: the service key. Falls back to RIGHT_RUDDER_API_KEY. Required, and checked here.
         endpoint: optional override for the repair endpoint.
         supersede: optional (old, new) token pairs the run is expected to migrate, such as a
             field rename, passed through to the repair.
@@ -108,13 +108,13 @@ class FathomRepairMiddleware(AgentMiddleware):
             matches the DBOS run where one re-ask occurred across 45 follow-up steps.
         on_error: "proceed" logs a warning and lets the agent act on its own proposal when the
             repair cannot be reached, the key is rejected, or the daily limit lands. "raise"
-            raises FathomRepairError instead, which is what a measured run wants, since a
+            raises RightRudderRepairError instead, which is what a measured run wants, since a
             silently skipped repair would contaminate a before-and-after.
         record: append one entry per repaired step to agent state under "fathom_repair".
         timeout: seconds to wait on the repair.
     """
 
-    state_schema = FathomRepairState  # type: ignore[assignment]
+    state_schema = RightRudderRepairState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -132,13 +132,13 @@ class FathomRepairMiddleware(AgentMiddleware):
             raise ValueError("on_error must be 'proceed' or 'raise'")
         if max_reasks < 0:
             raise ValueError("max_reasks cannot be negative")
-        self.key = key or os.environ.get("FATHOM_API_KEY")
+        self.key = key or (os.environ.get("RIGHT_RUDDER_API_KEY") or os.environ.get("FATHOM_API_KEY"))
         if not self.key:
-            raise FathomKeyError(
-                "the repair needs a key. Get a free one with `fathom key you@example.com`, then set "
-                "FATHOM_API_KEY or pass key= to FathomRepairMiddleware. The read runs without one."
+            raise RightRudderKeyError(
+                "the repair needs a key. Get a free one with `right-rudder key you@example.com`, then set "
+                "RIGHT_RUDDER_API_KEY or pass key= to RightRudderRepairMiddleware. The read runs without one."
             )
-        self.endpoint = endpoint or os.environ.get("FATHOM_REGROUND_ENDPOINT")
+        self.endpoint = endpoint or (os.environ.get("RIGHT_RUDDER_REGROUND_ENDPOINT") or os.environ.get("FATHOM_REGROUND_ENDPOINT"))
         self.supersede = supersede
         self.mapping_path = mapping_path
         self.max_reasks = max_reasks
@@ -192,8 +192,8 @@ class FathomRepairMiddleware(AgentMiddleware):
                                    endpoint=self.endpoint, timeout=self.timeout)
             except ReadError as e:
                 if self.on_error == "raise":
-                    raise FathomRepairError(str(e)) from None
-                log.warning("fathom: could not reach the repair (%s); the agent proceeds unrepaired", e)
+                    raise RightRudderRepairError(str(e)) from None
+                log.warning("right-rudder: could not reach the repair (%s); the agent proceeds unrepaired", e)
                 return self._finish(response, entries)
 
             entries.append({
@@ -215,14 +215,14 @@ class FathomRepairMiddleware(AgentMiddleware):
                 kept_calls = [c for i, c in enumerate(tool_calls)
                               if i not in mapped or i in keep_origins]
                 dropped_n = len(tool_calls) - len(kept_calls)
-                log.info("fathom: the repair dropped %d of %d proposed actions the run already committed",
+                log.info("right-rudder: the repair dropped %d of %d proposed actions the run already committed",
                          dropped_n, len(tool_calls))
                 response.result[ai_index] = self._with_tool_calls(ai, kept_calls)
                 return self._finish(response, entries)
 
             # reground. Put the committed facts back in front of the model and ask again.
             if attempt >= self.max_reasks:
-                log.warning("fathom: every proposed action still contradicts the committed state after "
+                log.warning("right-rudder: every proposed action still contradicts the committed state after "
                             "%d re-ask(s); the agent proceeds with its own", self.max_reasks)
                 return self._finish(response, entries)
 
@@ -255,7 +255,7 @@ class FathomRepairMiddleware(AgentMiddleware):
         if not entries or not self.record:
             return response
         if _ExtendedModelResponse is None or _Command is None:  # pragma: no cover - older langchain
-            log.debug("fathom: this langchain cannot carry a state update out of wrap_model_call; "
+            log.debug("right-rudder: this langchain cannot carry a state update out of wrap_model_call; "
                       "the repair ran and was not recorded on state")
             return response
         return _ExtendedModelResponse(

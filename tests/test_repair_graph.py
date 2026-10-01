@@ -14,9 +14,9 @@ from langchain_core.tools import tool
 
 from langchain.agents import create_agent
 
-import langchain_fathom.repair as R
-from langchain_fathom import FathomRepairMiddleware, REPAIR_STATE_KEY
-from fathom_read.ops import RegroundVerdict
+import langchain_right_rudder.repair as R
+from langchain_right_rudder import RightRudderRepairMiddleware, REPAIR_STATE_KEY
+from right_rudder.ops import RegroundVerdict
 
 WROTE = []
 
@@ -60,11 +60,11 @@ def _filter_verdict(*a, **k):
 
 def test_the_repair_drops_a_call_before_the_tool_runs(monkeypatch):
     WROTE.clear()
-    monkeypatch.setenv("FATHOM_API_KEY", "k-test")
+    monkeypatch.setenv("RIGHT_RUDDER_API_KEY", "k-test")
     monkeypatch.setattr(R, "reground", _filter_verdict)
 
     agent = create_agent(model=_model(), tools=[set_value],
-                         middleware=[FathomRepairMiddleware()])
+                         middleware=[RightRudderRepairMiddleware()])
     result = agent.invoke({"messages": [{"role": "user", "content": "write the record"}]})
 
     assert WROTE == [("user.zip", "80202")], "the contradicting write reached the tool"
@@ -87,17 +87,17 @@ def test_control_without_the_repair_both_writes_land(monkeypatch):
 def test_the_read_and_the_repair_ride_together(monkeypatch):
     """Both middlewares on one agent, each keeping its own declared key."""
     WROTE.clear()
-    monkeypatch.setenv("FATHOM_API_KEY", "k-test")
+    monkeypatch.setenv("RIGHT_RUDDER_API_KEY", "k-test")
     monkeypatch.setattr(R, "reground", _filter_verdict)
 
-    import langchain_fathom.middleware as M
-    from langchain_fathom import FathomMiddleware, STATE_KEY
-    from fathom_read.ops import Verdict
+    import langchain_right_rudder.middleware as M
+    from langchain_right_rudder import RightRudderMiddleware, STATE_KEY
+    from right_rudder.ops import Verdict
     monkeypatch.setattr(M, "read", lambda *a, **k: Verdict.from_dict(
         {"coherent": True, "findings": [], "ops_read": 1, "ops_rejected": 0, "live_facts": 1}))
 
     agent = create_agent(model=_model(), tools=[set_value],
-                         middleware=[FathomRepairMiddleware(), FathomMiddleware(on_finding="store")])
+                         middleware=[RightRudderRepairMiddleware(), RightRudderMiddleware(on_finding="store")])
     result = agent.invoke({"messages": [{"role": "user", "content": "write the record"}]})
 
     assert result[REPAIR_STATE_KEY][0]["decision"] == "filter"

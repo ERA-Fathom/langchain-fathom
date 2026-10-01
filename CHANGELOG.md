@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 (unreleased)
+
+Fathom is now Right Rudder, by Embedded Risk Analytics. The package installs as `langchain-right-rudder` and imports as `langchain_right_rudder`, and the classes carry the new name, `RightRudderMiddleware`, `RightRudderRepairMiddleware` and `RightRudderCapture` among them. It depends on `right-rudder` 0.7.0 in place of `fathom-read`.
+
+Compatibility. Every `Fathom` class name remains as an alias, the verdict still lands under the `"fathom"` state key and the repair log under `"fathom_repair"`, and the logger keeps the name `fathom`. The final `langchain-fathom` release (0.4.0) depends on this package and re-exports it under `langchain_fathom` with a deprecation warning.
+
 ## 0.3.0 (2026-09-18)
 
 - `FathomCapture` records every tool call an agent and its sub-agents make from one attachment at the graph root, attributing each to the `task()` delegation it ran under by run_id ancestry. It closes the gap `FathomMiddleware` leaves on a delegating orchestrator, where the orchestrator's middleware alone returned 3 of the 9 findings a trace across every sub-agent returned. `cap.trace(result["messages"])` returns the canonical trace the fathom-read `deepagents` adapter reads, and merges the orchestrator tool calls the callback does not see, such as `write_todos`, from the message history.

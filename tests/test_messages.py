@@ -1,5 +1,5 @@
 """The message-to-ops mapping is pure, so it tests on plain stand-in objects, no langchain."""
-from langchain_fathom.messages import ops_from_messages
+from langchain_right_rudder.messages import ops_from_messages
 
 
 class AI:

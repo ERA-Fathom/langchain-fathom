@@ -3,19 +3,19 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "langchain-fathom"
-version = "0.3.0"
+name = "langchain-right-rudder"
+version = "0.4.0"
 description = "LangChain agent middleware that reads an agent's committed state, and repairs the step where a later action would contradict an earlier one."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Embedded Risk Analytics" }]
 keywords = ["langchain", "agents", "coherence", "agent-evaluation", "observability"]
-dependencies = ["fathom-read>=0.6.0", "langchain>=1.0", "typing-extensions>=4.7"]
+dependencies = ["right-rudder>=0.7.0", "langchain>=1.0", "typing-extensions>=4.7"]
 
 [project.urls]
-Homepage = "https://github.com/ERA-Fathom/fathom"
-Source = "https://github.com/ERA-Fathom/langchain-fathom"
+Homepage = "https://github.com/RightRudderAI/right-rudder"
+Source = "https://github.com/RightRudderAI/langchain-right-rudder"
 
 [project.optional-dependencies]
 test = ["pytest"]

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langchain-fathom"
+version = "0.4.0"
+description = "langchain-fathom is now langchain-right-rudder. This final release installs it and keeps the langchain_fathom import working."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Embedded Risk Analytics", email = "contact@embeddedriskanalytics.com"}]
+dependencies = ["langchain-right-rudder>=0.4.0"]
+
+[project.urls]
+Homepage = "https://embeddedriskanalytics.com"
+Repository = "https://github.com/RightRudderAI/langchain-right-rudder"
+
+[tool.setuptools]
+packages = ["langchain_fathom"]
