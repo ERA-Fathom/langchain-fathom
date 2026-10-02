@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 (unreleased)
+## 0.4.0 (2026-10-02)
 
 Fathom is now Right Rudder, by Embedded Risk Analytics. The package installs as `langchain-right-rudder` and imports as `langchain_right_rudder`, and the classes carry the new name, `RightRudderMiddleware`, `RightRudderRepairMiddleware` and `RightRudderCapture` among them. It depends on `right-rudder` 0.7.0 in place of `fathom-read`.
 
