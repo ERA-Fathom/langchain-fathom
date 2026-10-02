@@ -1,8 +1,0 @@
-README.md
-pyproject.toml
-langchain_fathom/__init__.py
-langchain_fathom.egg-info/PKG-INFO
-langchain_fathom.egg-info/SOURCES.txt
-langchain_fathom.egg-info/dependency_links.txt
-langchain_fathom.egg-info/requires.txt
-langchain_fathom.egg-info/top_level.txt
